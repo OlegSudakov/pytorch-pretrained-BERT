@@ -1110,6 +1110,42 @@ class BertForSequenceRegression(BertPreTrainedModel):
             return preds
 
 
+class BertForSequenceRegressionClass(BertPreTrainedModel):
+
+    def __init__(self, config, num_preds, emb_dims, num_dim):
+        super(BertForSequenceRegressionClass, self).__init__(config)
+        self.emb_layers = nn.ModuleList([nn.Embedding(d1, d2) for (d1, d2) in emb_dims])
+        self.num_labels = num_preds
+        self.bert = BertModel(config)
+        self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.regressor = nn.Linear(config.hidden_size + sum(ed[1] for ed in emb_dims) + num_dim, num_preds)
+        self.apply(self.init_bert_weights)
+
+    def embed(self, categorical):
+        """
+        Embed categorical values in demographic data
+        :param x: batch_size x demographic_dim tensor
+        :return: batch_size x embedded_dim tensor
+        """
+        x = [emb_layer(categorical[:, i]) for i, emb_layer in enumerate(self.emb_layers)]
+        x = torch.cat(x, 1)
+        return x
+
+    def forward(self, numerical, categorical, input_ids, token_type_ids=None, attention_mask=None, labels=None):
+        categorical = self.embed(categorical)
+        _, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
+        pooled_output = self.dropout(pooled_output)
+        all_features = torch.cat([numerical, categorical, pooled_output], axis=1)
+        preds = self.regressor(all_features)
+
+        if labels is not None:
+            loss_fct = L1Loss()
+            loss = loss_fct(preds.view(-1, self.num_labels), labels.view(-1))
+            return loss
+        else:
+            return preds
+
+
 class BertForMultipleChoice(BertPreTrainedModel):
     """BERT model for multiple choice tasks.
     This module is composed of the BERT model with a linear layer on top of

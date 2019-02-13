@@ -6,7 +6,7 @@ from .tokenization_transfo_xl import (TransfoXLTokenizer, TransfoXLCorpus)
 from .modeling import (BertConfig, BertModel, BertForPreTraining,
                        BertForMaskedLM, BertForNextSentencePrediction,
                        BertForSequenceClassification, BertForSequenceRegression, BertForMultipleChoice,
-                       BertForTokenClassification, BertForQuestionAnswering,
+                       BertForTokenClassification, BertForQuestionAnswering, BertForSequenceRegressionClass,
                        load_tf_weights_in_bert)
 from .modeling_openai import (OpenAIGPTConfig, OpenAIGPTModel,
                               OpenAIGPTLMHeadModel, OpenAIGPTDoubleHeadsModel,
